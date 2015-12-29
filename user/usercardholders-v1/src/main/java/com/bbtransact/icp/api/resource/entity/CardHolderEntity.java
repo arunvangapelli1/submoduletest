@@ -73,7 +73,7 @@ public class CardHolderEntity implements Serializable {
     public IssuerEntity getIssuerEntity() {
         return issuerEntity;
     }
-
+    //setter for issue entity
     public void setIssuerEntity(IssuerEntity issuerEntity) {
         this.issuerEntity = issuerEntity;
 
