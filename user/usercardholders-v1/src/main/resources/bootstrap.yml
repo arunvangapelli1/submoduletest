@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: usercardholders-v1
+  cloud:
+    config:
+      uri: http://localhost:9797
