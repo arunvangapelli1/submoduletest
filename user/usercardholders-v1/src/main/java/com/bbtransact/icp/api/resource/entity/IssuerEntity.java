@@ -50,6 +50,7 @@ public class IssuerEntity implements Serializable {
         return cardHolderEntity;
     }
 
+    //setter for CardHolderEntity
     public void setCardHolderEntity(Set<CardHolderEntity> cardHolderEntity) {
         this.cardHolderEntity = cardHolderEntity;
     }
