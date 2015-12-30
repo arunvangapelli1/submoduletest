@@ -1,0 +1,181 @@
+buildscript {
+    ext {
+        springBootVersion = '1.2.7.RELEASE'
+    }
+    repositories {
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
+    	mavenLocal()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}") 
+        classpath('io.spring.gradle:dependency-management-plugin:0.5.2.RELEASE')
+        classpath 'mysql:mysql-connector-java:5.1.34'
+        classpath "org.sonarqube.gradle:gradle-sonarqube-plugin:1.1"
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse-wtp'
+apply plugin: 'idea'
+apply plugin: 'spring-boot' 
+apply plugin: 'io.spring.dependency-management' 
+apply plugin: 'war'
+apply plugin: 'org.sonarqube'
+apply plugin: "jacoco"
+apply plugin: "sonar-runner"
+apply plugin: 'findbugs'
+apply plugin: 'pmd'
+apply plugin: 'checkstyle'
+
+group    = 'com.bbtransact.icp.api'
+//version  = "${build_version}"
+
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+sourceSets {
+    generated {
+        java {
+            srcDirs = ['src/main/generated']
+        }
+    }
+}
+
+configurations {
+    providedRuntime
+    querydslapt
+}
+
+jacoco {
+   
+    reportsDir = file("build/tmp/jacoco.exec")
+}
+
+test{
+    ignoreFailures = true    
+}
+
+sonarqube {
+  properties {
+    property "sonar.projectName", "apt"
+    property "sonar.projectKey", "org.sonarqube:user"
+    property "sonar.sourceEncoding", "UTF-8"
+    property "sonar.host.url", "http://10.20.122.50:9000"
+    property "sonar.jacoco.reportPath", "build/jacoco/test.exec"
+    property "sonar.java.source property", "1.8"
+   // property "sonar.sources", "src"
+  }
+}
+
+dependencies {
+    checkstyle 'com.puppycrawl.tools:checkstyle:6.11.2'
+    compile('org.springframework.cloud:spring-cloud-starter-eureka:1.0.4.RELEASE')
+    compile('org.springframework.cloud:spring-cloud-config-client:1.0.3.RELEASE')
+    compile('org.codehaus.sonar-plugins.java:sonar-jacoco-plugin:2.3')
+    compile('org.springframework.boot:spring-boot-starter-web')
+    compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.2'
+    compile 'mysql:mysql-connector-java:5.1.34'
+    compile 'org.springframework:spring-webmvc:4.2.2.RELEASE'
+    providedRuntime('org.springframework.boot:spring-boot-starter-tomcat')
+    testCompile('org.springframework.boot:spring-boot-starter-test') 
+    compile("org.springframework.boot:spring-boot-starter-data-jpa")
+    querydslapt "org.hibernate:hibernate-jpamodelgen:5.0.5.Final"
+}
+
+
+eclipse {
+    classpath {
+         containers.remove('org.eclipse.jdt.launching.JRE_CONTAINER')
+         containers 'org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8'
+    }
+}
+
+task generateQueryDSL(type: JavaCompile, group: 'build', description: 'Generates the QueryDSL query types') {
+    source = sourceSets.main.java
+    classpath = configurations.compile + configurations.querydslapt
+    options.compilerArgs = [
+            "-proc:only"
+    ]
+    destinationDir = sourceSets.generated.java.srcDirs.iterator().next()
+}
+
+compileJava {
+    dependsOn generateQueryDSL
+    source generateQueryDSL.destinationDir
+}
+
+compileGeneratedJava {
+    dependsOn generateQueryDSL
+    options.warnings = false
+    classpath += sourceSets.main.runtimeClasspath
+}
+
+clean {
+    delete sourceSets.generated.java.srcDirs
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.7'
+}
+
+findbugs {
+   toolVersion = "3.0.1"
+   ignoreFailures = true
+   sourceSets = [sourceSets.main]
+   reportsDir = file("$project.buildDir/reports/findbugs")
+   reportLevel = "high"
+   effort = "max"
+}
+
+findbugsMain.source = "${project.rootDir}/src/main"
+
+tasks.withType(FindBugs) {
+   reports {
+      xml.enabled  = true
+      html.enabled = false
+   }
+ }
+
+pmd {
+   toolVersion = "5.4.0"
+   ignoreFailures = true
+   sourceSets = [sourceSets.main]
+   reportsDir = file("$project.buildDir/reports/pmd")
+   ruleSets = [
+      "java-basic",
+      "java-braces"
+   ]
+}
+
+pmdMain.source = "${project.rootDir}/src/main"
+
+tasks.withType(Pmd) {
+   reports {
+      xml.enabled  = true
+      html.enabled = false
+   }
+}
+
+task checkstyle(type: Checkstyle) {
+   ignoreFailures = true
+
+   configFile = new File(rootDir, "config/checkstyle_checks.xml")
+   source 'src/main/java'
+   include 'com/**/**/**/**/*.java'
+   classpath = files()
+   checkstyleClasspath += classpath
+   reports {
+      xml {
+         destination "${rootDir}/build/reports/checkstyle/checkstyle_output.xml"
+      }
+   }
+}
