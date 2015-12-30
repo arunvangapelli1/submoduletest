@@ -25,7 +25,6 @@ public class CardController {
     @Autowired
     ICardService iCardService;
 
-    ///// mapping to all cards
     @RequestMapping(value = "/accountholders/{cardHolderId}/cards", produces = "application/json; charset=utf-8", method = RequestMethod.GET)
     @ResponseBody
     public String getCards(@PathVariable("cardHolderId") final String id) throws JsonMappingException, IOException {
@@ -38,7 +37,6 @@ public class CardController {
         return jsonObj;
     }
 
-    /// mapping to single card
     @RequestMapping(value = "/accountholders/{cardHolderId}/cards/{cardId}", produces = "application/json; charset=utf-8", method = RequestMethod.GET)
     @ResponseBody
     public String getCard(@PathVariable("cardHolderId") final String cardHolderId,
